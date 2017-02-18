@@ -1,11 +1,14 @@
 package com.zxy.functioncollection.function.ImagePicker;
 
 import android.annotation.SuppressLint;
+import android.app.Activity;
+import android.content.DialogInterface;
 import android.content.Intent;
+import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Environment;
 import android.provider.MediaStore;
-import android.support.v4.app.FragmentActivity;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -27,11 +30,11 @@ import java.util.List;
 
 public class ImagePickerAdapter extends RecyclerView.Adapter<ImagePickerAdapter.ViewHolder> {
 
-    private FragmentActivity mActivity;
+    private Activity mActivity;
 
     private LayoutInflater mInflater;
 
-    private List<String> mDatas;
+    private List<Bitmap> mDatas;
 
     public final static int IMAGE_FROM_GALLERY = 100;
 
@@ -41,24 +44,25 @@ public class ImagePickerAdapter extends RecyclerView.Adapter<ImagePickerAdapter.
 
     private int mLimit, mScreenWidth;
 
-    public ImagePickerAdapter(FragmentActivity act, List<String> datas, int limit) {
-        mInflater = LayoutInflater.from(act);
-        mActivity = act;
+    public ImagePickerAdapter(Activity activity, List<Bitmap> datas, int limit) {
+        mInflater = LayoutInflater.from(activity);
+        mActivity = activity;
         mDatas = datas;
-        mDatas.add("");
+        mDatas.add(null);
         mLimit = limit;
         mScreenWidth = CommonUtil.getScreenWidth();
     }
 
-    public void addData(String imageurl) {
+    public void addData(Bitmap bitmap) {
         int i = mDatas.size() - 1;
-        mDatas.add(i, imageurl);
+        mDatas.add(i, bitmap);
         if (i != 8) {
             notifyItemInserted(i);
         } else {
             notifyDataSetChanged();
         }
     }
+
 
     @Override
     public int getItemCount() {
@@ -81,6 +85,7 @@ public class ImagePickerAdapter extends RecyclerView.Adapter<ImagePickerAdapter.
             });
         } else {
 
+            holder.mImage.setImageBitmap(mDatas.get(i));
             holder.mImage.setOnClickListener(null);
             holder.mDelete.setVisibility(View.VISIBLE);
             holder.mDelete.setOnClickListener(new View.OnClickListener() {
@@ -119,31 +124,37 @@ public class ImagePickerAdapter extends RecyclerView.Adapter<ImagePickerAdapter.
     }
 
 
-
     /**
      * 添加图片选择
      */
     public void addImage() {
-//        final DialogListFragment fragment = new DialogListFragment();
-//        fragment.setDialogListener(new DialogListener() {
-//
-//            @Override
-//            public void click(View v) {
-//                if (v.getId() == R.id.camera) {
-//                    takephotos();
-//                } else if (v.getId() == R.id.gallery) {
-//                    togallery();
-//                }
-//                fragment.dismiss();
-//            }
-//        });
-//        fragment.showDialog(mActivity);
+        final String items[] = {"相册", "拍照"};
+        //dialog参数设置
+        AlertDialog.Builder builder = new AlertDialog.Builder(mActivity);  //先得到构造器
+        builder.setTitle("从哪里获取图片"); //设置标题
+        builder.setItems(items, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                dialog.dismiss();
+                if (which == 0) {    //相册
+                    togallery();
+                } else {    //拍照
+                    takephotos();
+                }
+            }
+        });
+        builder.setNegativeButton("取消", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                dialog.dismiss();
+            }
+        });
+        builder.create().show();
     }
 
     private void togallery() {
         Intent intent = new Intent(Intent.ACTION_GET_CONTENT).setType("image/*");
         mActivity.startActivityForResult(intent, IMAGE_FROM_GALLERY);
-
     }
 
     @SuppressLint("SimpleDateFormat")
